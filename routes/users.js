@@ -1,10 +1,7 @@
 //Configuramos lo necesario para poder crear las rutas
 const express = require('express');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const {secret} = require ('../crypto/config');
 const users = require('../data/users');
-const { verifyToken } = require('../middlewares/authMiddleware');
+const { verifyToken, generateToken } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
@@ -32,11 +29,11 @@ router.get('/', (req, res)=>{
 //Creamos la ruta para iniciar sesión
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
-    const user = users.find((user) => user.username === username);
+    const user = users.find((user) => user.username === username && user.password === password);
 
-    if (user && bcrypt.compareSync(password, user.password)) { 
-        const token = jwt.sign({ user: user.id }, secret, { expiresIn: '1h' }); 
-        req.session.token = token;
+    if (user) { 
+        const token = generateToken(user); 
+        req.session.token = token; //guardo el token en el session del usuario
         res.redirect('/dashboard');
     } else {
         res.status(401).json({ mensaje: 'Credenciales incorrectas' });
